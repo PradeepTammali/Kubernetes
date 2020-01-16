@@ -1,0 +1,26 @@
+# permissions to do edit maprtickets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: maprticket-editor-role
+rules:
+- apiGroups:
+  - nsc.k8s.io
+  resources:
+  - maprtickets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - nsc.k8s.io
+  resources:
+  - maprtickets/status
+  verbs:
+  - get
+  - patch
+  - update

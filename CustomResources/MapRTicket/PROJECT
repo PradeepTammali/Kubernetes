@@ -1,0 +1,7 @@
+domain: k8s.io
+repo: nsc/k8s/io
+resources:
+- group: nsc
+  kind: MapRTicket
+  version: v1alpha1
+version: "2"

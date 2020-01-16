@@ -1,0 +1,101 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: maprtickets.nsc.k8s.io
+spec:
+  group: nsc.k8s.io
+  names:
+    kind: MapRTicket
+    listKind: MapRTicketList
+    plural: maprtickets
+    singular: maprticket
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: MapRTicket is the Schema for the maprtickets API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MapRTicketSpec defines the desired state of MapRTicket
+          properties:
+            groupID:
+              description: GroupID of the user who is trying to create ticket GroupID
+                will be the IDM group id of the user which he belongs to in NSC.
+              format: int64
+              minimum: 1
+              type: integer
+            groupName:
+              description: GroupName of the user who is trying to create ticket GroupName
+                will be the IDM group name of the user which he belongs to in NSC.
+              minLength: 1
+              type: string
+            password:
+              description: Password of the user who is trying to create ticket
+              minLength: 1
+              type: string
+            userID:
+              description: UserID of the user who is trying to create ticket. UserID
+                is GLobalUnixID we get when we register in IDM.
+              format: int64
+              minimum: 1
+              type: integer
+            userName:
+              description: UserName of the user who is trying to create ticket UserName
+                will be the signum id of the user
+              minLength: 1
+              type: string
+          type: object
+        status:
+          description: MapRTicketStatus defines the observed state of MapRTicket
+          properties:
+            phase:
+              description: The state of the ticket generated. Can be Available, Unavailable
+              enum:
+              - Creating
+              - Available
+              - Unavailable
+              - Unknown
+              - Failed
+              type: string
+            ticketExpiryDate:
+              description: Ticket validity which is been generated. Ticket will be
+                expired on the date which is been shown here.
+              format: date-time
+              type: string
+            ticketSecretName:
+              description: The name of the ticket secret generated.
+              type: string
+            ticketSecretNamespace:
+              description: The namespace of the ticket secret generated.
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
