@@ -60,7 +60,15 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 
 	// Check if file /tmp/maprticket_MAPR_CONTAINER_UID exist
 	log.Info("Checking if the ticket file exist.")
-
+	fileCheck, fileCheckErr := os.Stat("/tmp/maprticket_"+string(maprticket.Spec.UserID))
+	if os.IsNotExist(fileCheckErr) {
+		log.Error(fileCheckErr, "/tmp/maprticket_"+string(maprticket.Spec.UserID) + " File does not exist. Ticket Might not have been generated properly.")
+		return fileCheckErr
+	}
+	if fileCheck.IsDir() {
+		log.Error(fileCheckErr, "/tmp/maprticket_"+string(maprticket.Spec.UserID) + " is a directory. Not a file. Plese check if mapr login is working properly.")
+	}
+	log.Info("/tmp/maprticket_"+string(maprticket.Spec.UserID) + " File exists.")
 
 	// Fetching the ticket contents of mapr ticket file
 	log.Info("Fetching the mapr ticket file contents.")
