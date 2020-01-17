@@ -71,18 +71,14 @@ making the validation more easily reusable.
 // Only one of the following TicketPhase may be specified.
 // If none of the following TicketPhase is specified, the default one
 // is Creating.
-// +kubebuilder:validation:Enum=Creating;Available;Unavailable;Unknown;Failed
+// +kubebuilder:validation:Enum=Creating;Available;Unavailable;Completed;Failed
 type TicketPhase string
 
 const (
 	// Creating is when the process of ticket creation is started.
 	Creating TicketPhase = "Creating"
 
-	Available TicketPhase = "Available"
-
-	Unavailable TicketPhase = "Unavailable"
-
-	Unknown TicketPhase = "Unknown"
+	Completed TicketPhase = "Completed"
 
 	Failed TicketPhase = "Failed"
 )
@@ -99,6 +95,14 @@ type MapRTicketStatus struct {
 	// The state of the ticket generated. Can be Available, Unavailable
 	// +optional
 	Phase TicketPhase `json:"phase,omitempty"`
+
+	// The MapR Ticket information which contains the details of the ticket.
+	// +optional
+	TicketInfo string `json:"ticketInfo,omitempty"`
+
+	// The MapR Ticket of the User 
+	// +optional
+	MaprTicket string `json:"maprTicket,omitempty"`
 
 	// The name of the ticket secret generated.
 	// +optional
