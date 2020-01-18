@@ -69,6 +69,10 @@ spec:
             maprTicket:
               description: The MapR Ticket of the User
               type: string
+            maprTicketInfo:
+              description: The MapR Ticket information which contains the details
+                of the ticket.
+              type: string
             phase:
               description: The state of the ticket generated. Can be Available, Unavailable
               enum:
@@ -80,10 +84,6 @@ spec:
               description: Ticket validity which is been generated. Ticket will be
                 expired on the date which is been shown here.
               format: date-time
-              type: string
-            ticketInfo:
-              description: The MapR Ticket information which contains the details
-                of the ticket.
               type: string
             ticketSecretName:
               description: The name of the ticket secret generated.

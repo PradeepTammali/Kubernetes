@@ -2,9 +2,9 @@
 1. Set env vars 
 
 export DEFAULT_USERID=0
-export DEFAULT_USERNAME=""
+export DEFAULT_USERNAME=root
 export DEFAULT_GROUPID=0
-export DEFAULT_GROUPNAME=""
+export DEFAULT_GROUPNAME=root
 export ENABLE_WEBHOOKS=false
 
 
@@ -49,10 +49,10 @@ https://mapr.com/docs/home/AdvancedInstallation/c_installer_how_it_works.html#co
 
 docker cp /home/pradeep/ssl_truststore f69551aa4141:/opt/mapr/conf/
 
-export MAPR_CONTAINER_GID=25427
-export MAPR_CONTAINER_GROUP=nscdev
-export MAPR_CONTAINER_UID=7160629
-export MAPR_CONTAINER_USER=etmmprd
+export MAPR_CONTAINER_GID=
+export MAPR_CONTAINER_GROUP=
+export MAPR_CONTAINER_UID=
+export MAPR_CONTAINER_USER=
 export MAPR_TICKETFILE_LOCATION=/tmp/maprticket_$MAPR_CONTAINER_UID
 
 

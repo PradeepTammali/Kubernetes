@@ -17,6 +17,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/base64"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,6 +29,7 @@ import (
 
 	apiv1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // MapRTicketReconciler reconciles a MapRTicket object
@@ -76,10 +78,6 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	if maprTicket.Status.Phase == "" {
 		log.Info("Phase is nil, so Creating MapR Ticket for the user " + maprTicket.Spec.UserName)
 		maprTicket.Status.Phase = nscv1alpha1.Creating
-		// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-		// maprTicket.Status.TicketExpiryDate = &metav1.Time{Time: time.Now()}
-		// maprTicket.Status.TicketSecretName = maprTicket.Name
-		// maprTicket.Status.TicketSecretNamespace = maprTicket.Namespace
 		log.Info("Updating the status to creating.")
 		if status_err := r.updateMapRTicketStatus(req, maprTicket); status_err != nil {
 			log.Error(status_err, "ERROR - Error while updating the status of the Resource of type MapRTicket.")
@@ -87,29 +85,8 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 			return ctrl.Result{}, status_err
 		}
 		log.Info("Status updated.")
-		// Secret Name validation.
-		secret := &apiv1.Secret{}
-		secretKey := client.ObjectKey{Namespace: maprTicket.Namespace, Name: maprTicket.Name}
-		if secretErr := r.Get(ctx, secretKey, secret); secretErr != nil {
-			if !apierrors.IsNotFound(secretErr) {
-				log.Error(secretErr, "ERROR- Error occured while reading secret.")
-				maprTicket.Status.Phase = nscv1alpha1.Failed
-				r.updateMapRTicketStatus(req, maprTicket)
-				// TODO: Update the Resource events here
-				return ctrl.Result{}, secretErr
-			}
-			log.Info("Ingnoring if it is Secret not found error.")
-		}
-		if secret.Name == maprTicket.Name {
-			log.Error(apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name), " Secret with the mentioned is already exist. Throwing already exist error. Updating status to Faied and writing to events ...")
-			maprTicket.Status.Phase = nscv1alpha1.Failed
-			r.updateMapRTicketStatus(req, maprTicket)
-			// TOD: Update the events
-			return ctrl.Result{}, apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name)
-		}
-		// Validation success. No secret available with same name.
-		log.Info("Secret name validation done. No secret available with same name.")
-		// Connect to MapR
+
+		// Connecting to MapR to create MapR Ticket 
 		// TODO: Update events
 		log.Info("Connecting to MapR to generate ticket.")
 		if createErr := r.createMapRTicket(req, maprTicket); createErr != nil {
@@ -123,6 +100,61 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		maprTicket.Status.Phase = nscv1alpha1.Completed
 		r.updateMapRTicketStatus(req, maprTicket)
 		// TODO: Update the events here.
+
+		if maprTicket.Spec.CreateSecret {
+			log.Info("CreateSecret is true, so creating MapR Ticket in the current namespace with same name as MapRTicket Resource.")
+			// Secret Name validation.
+			secret := &apiv1.Secret{}
+			secretKey := client.ObjectKey{Namespace: maprTicket.Namespace, Name: maprTicket.Name}
+			if secretErr := r.Get(ctx, secretKey, secret); secretErr != nil {
+				if !apierrors.IsNotFound(secretErr) {
+					log.Error(secretErr, "ERROR- Error occured while reading secret.")
+					maprTicket.Status.Phase = nscv1alpha1.Failed
+					r.updateMapRTicketStatus(req, maprTicket)
+					// TODO: Update the Resource events here
+					return ctrl.Result{}, secretErr
+				}
+				log.Info("Ingnoring if it is Secret not found error.")
+			}
+			if secret.Name == maprTicket.Name {
+				log.Error(apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name), " Secret with the mentioned is already exist. Throwing already exist error. Updating status to Faied and writing to events ...")
+				maprTicket.Status.Phase = nscv1alpha1.Failed
+				r.updateMapRTicketStatus(req, maprTicket)
+				// TOD: Update the events
+				return ctrl.Result{}, apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name)
+			}
+			// Validation success. No secret available with same name.
+			log.Info("Secret name validation done. No secret available with same name.")
+			log.Info("Creating secret with encoded MapR Ticket.")
+			log.Info("Preparing Secret Object.")
+			secret = &apiv1.Secret{
+				Type: apiv1.SecretTypeOpaque,
+				ObjectMeta: metav1.ObjectMeta{
+						Name:      maprTicket.Name,
+						Namespace: maprTicket.Namespace,
+						Labels:    maprTicket.GetLabels(),
+				},
+			}
+			if maprTicket.Status.MaprTicket != "" || len(maprTicket.Status.MaprTicket) != 0 {
+				secret.Data = map[string][]byte{
+						"CONTAINER_TICKET":  []byte(base64.StdEncoding.EncodeToString(([]byte(maprTicket.Status.MaprTicket)))),
+				}
+			}
+			log.Info("Creating resource Secret in current namespace with MapR Ticket.")
+			if secretCreateErr := r.Create(ctx, secret); secretCreateErr != nil {
+				log.Error(secretCreateErr, "ERROR - unable to create MapRTicket Secret")
+				// TODO: update the events here
+                return ctrl.Result{}, secretCreateErr
+			}
+			log.Info("Created MapR Ticket Secret successfully.")
+
+			// Update the status of resource maprticket.
+			log.Info("Updating secretname and namespace in the status of the resource.")
+			maprTicket.Status.TicketSecretName = secret.ObjectMeta.Name
+			maprTicket.Status.TicketSecretNamespace = secret.ObjectMeta.Namespace
+			r.updateMapRTicketStatus(req, maprTicket)
+			// TODO: Update the events here 
+		}
 	}
 	return ctrl.Result{}, nil
 }

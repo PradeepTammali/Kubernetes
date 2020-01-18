@@ -31,33 +31,45 @@ type MapRTicketSpec struct {
 	// Foo string `json:"foo,omitempty"`
 
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Required
 
 	// UserID of the user who is trying to create ticket.
 	// UserID is GLobalUnixID we get when we register in IDM.
 	UserID int64 `json:"userID,omitempty"`
 
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
 
 	// UserName of the user who is trying to create ticket
 	// UserName will be the signum id of the user
 	UserName string `json:"userName,omitempty"`
 
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Required
 
 	// GroupID of the user who is trying to create ticket
 	// GroupID will be the IDM group id of the user which he belongs to in NSC.
 	GroupID int64 `json:"groupID,omitempty"`
 
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
 
 	// GroupName of the user who is trying to create ticket
 	// GroupName will be the IDM group name of the user which he belongs to in NSC.
 	GroupName string `json:"groupName,omitempty"`
 
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
 
 	// Password of the user who is trying to create ticket
 	Password string `json:"password,omitempty"`
+
+	// +kubebuilder:validation:Required
+
+	// This flag tells the controller whether to create secret or not with mapr ticket encoded in base64.
+	// MaprTicket Resource does not delete the secret upon deletion of MapRTicket resource.
+	// When set to true, creates secret with same name as Resource name.
+	CreateSecret bool `json:"createSecret,omitempty"`
 }
 
 /*
@@ -98,7 +110,7 @@ type MapRTicketStatus struct {
 
 	// The MapR Ticket information which contains the details of the ticket.
 	// +optional
-	TicketInfo string `json:"ticketInfo,omitempty"`
+	MaprTicketInfo string `json:"maprTicketInfo,omitempty"`
 
 	// The MapR Ticket of the User
 	// +optional
