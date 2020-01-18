@@ -27,6 +27,7 @@ import (
 
 func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *nscv1alpha1.MapRTicket) error {
 	log := r.requestLogger(req)
+	log.Info(string(maprticket.Spec.GroupID), maprticket.Spec.GroupName, string(maprticket.Spec.UserID), maprticket.Spec.UserName, "/tmp/maprticket_"+string(maprticket.Spec.UserID))
 	log.Info("creating MapR Ticket for the user " + maprticket.Spec.UserName)
 	log.Info("Setting environment variables for MAPR_CONTAINER_GID, MAPR_CONTAINER_GROUP, MAPR_CONTAINER_UID, MAPR_CONTAINER_USER and MAPR_TICKETFILE_LOCATION.")
 	os.Setenv("MAPR_CONTAINER_GID", string(maprticket.Spec.GroupID))
@@ -47,28 +48,24 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		log.Error(err, "Error executing mapr login password command.")
+		log.Error(err, "ERROR - Error executing mapr login password command.")
 		return err
 	}
 	log.Info("MAPR LOGIN OUTPUT: " + out.String())
-	// TODO: Check if invalid password or username or any errors in out.string.  or check if string contains MAPR_TICKETFILE_LOCATION values 
+	// TODO: Check if invalid password or username or any errors in out.string.  or check if string contains MAPR_TICKETFILE_LOCATION values
 	log.Info("INFO - MapR Ticket for user " + maprticket.Spec.UserName + " is generated successfully.")
-
-	log.Info("Updating the status of the MapRTicket.")
-	maprticket.Status.TicketInfo = out.String()
-	r.updateMapRTicketStatus(req, maprticket)
 
 	// Check if file /tmp/maprticket_MAPR_CONTAINER_UID exist
 	log.Info("Checking if the ticket file exist.")
-	fileCheck, fileCheckErr := os.Stat("/tmp/maprticket_"+string(maprticket.Spec.UserID))
+	fileCheck, fileCheckErr := os.Stat("/tmp/maprticket_" + string(maprticket.Spec.UserID))
 	if os.IsNotExist(fileCheckErr) {
-		log.Error(fileCheckErr, "/tmp/maprticket_"+string(maprticket.Spec.UserID) + " File does not exist. Ticket Might not have been generated properly.")
+		log.Error(fileCheckErr, "ERROR - /tmp/maprticket_"+string(maprticket.Spec.UserID)+" File does not exist. Ticket Might not have been generated properly.")
 		return fileCheckErr
 	}
 	if fileCheck.IsDir() {
-		log.Error(fileCheckErr, "/tmp/maprticket_"+string(maprticket.Spec.UserID) + " is a directory. Not a file. Plese check if mapr login is working properly.")
+		log.Error(fileCheckErr, "ERROR - /tmp/maprticket_"+string(maprticket.Spec.UserID)+" is a directory. Not a file. Plese check if mapr login is working properly.")
 	}
-	log.Info("/tmp/maprticket_"+string(maprticket.Spec.UserID) + " File exists.")
+	log.Info("/tmp/maprticket_" + string(maprticket.Spec.UserID) + " File exists.")
 
 	// Fetching the ticket contents of mapr ticket file
 	log.Info("Fetching the mapr ticket file contents.")
@@ -77,13 +74,29 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	fetchCmd.Stdout = &fetchOut
 	fetchErr := fetchCmd.Run()
 	if fetchErr != nil {
-		log.Error(fetchErr, "Error while fetching MapTicket file contents.")
+		log.Error(fetchErr, "ERROR - Error while fetching MapTicket file contents.")
 		return fetchErr
 	}
-	log.Info("CAT " + "/tmp/maprticket_"+string(maprticket.Spec.UserID) + " is ran successfully.")
+	log.Info("CAT " + "/tmp/maprticket_" + string(maprticket.Spec.UserID) + " is ran successfully.")
 	log.Info("INFO - MapR Ticket for user " + maprticket.Spec.UserName + " is retrieved successfully.")
-	log.Info("Updating MapRTicket in the Resource status.")
+	log.Info("Updating MaprTicket in the Resource status.")
 	maprticket.Status.MaprTicket = fetchOut.String()
 	r.updateMapRTicketStatus(req, maprticket)
+	log.Info("Updating the TicketInfo status of the MapRTicket.")
+	maprticket.Status.TicketInfo = out.String()
+	r.updateMapRTicketStatus(req, maprticket)
+	// Unsetting the environment varibales
+	log.Info("Unsetting the env variables.")
+	os.Unsetenv("MAPR_CONTAINER_GID")
+	os.Unsetenv("MAPR_CONTAINER_GROUP")
+	os.Unsetenv("MAPR_CONTAINER_UID")
+	os.Unsetenv("MAPR_CONTAINER_USER")
+	os.Unsetenv("MAPR_TICKETFILE_LOCATION")
+	log.Info("Unsetting env vars is done.")
+	// remove the generated ticket file.
+	var fileRemoveErr = os.Remove("/tmp/maprticket_" + string(maprticket.Spec.UserID))
+	if fileRemoveErr != nil {
+		log.Error(fileRemoveErr, "ERROR- Error while removing the ticket file.")
+	}
 	return nil
 }

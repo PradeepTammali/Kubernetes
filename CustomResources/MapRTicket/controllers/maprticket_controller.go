@@ -61,7 +61,7 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// MapRTicket instance
 	var maprTicket = &nscv1alpha1.MapRTicket{}
 
-	// Fetching MapRTicket Resource 
+	// Fetching MapRTicket Resource
 	log.Info("Fetching MapRticket Resource.")
 	if err := r.Get(ctx, req.NamespacedName, maprTicket); err != nil {
 		// log.Error(err, " error while fetching maprticket")
@@ -71,7 +71,6 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	log.Info("Fetching MapRticket is done.")
-
 
 	// Creating MapRTicket Resource
 	if maprTicket.Status.Phase == "" {
@@ -84,7 +83,7 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		log.Info("Updating the status to creating.")
 		if status_err := r.updateMapRTicketStatus(req, maprTicket); status_err != nil {
 			log.Error(status_err, "ERROR - Error while updating the status of the Resource of type MapRTicket.")
-			// TODO: Update the Resource events here 
+			// TODO: Update the Resource events here
 			return ctrl.Result{}, status_err
 		}
 		log.Info("Status updated.")
@@ -96,10 +95,10 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 				log.Error(secretErr, "ERROR- Error occured while reading secret.")
 				maprTicket.Status.Phase = nscv1alpha1.Failed
 				r.updateMapRTicketStatus(req, maprTicket)
-				// TODO: Update the Resource events here 
+				// TODO: Update the Resource events here
 				return ctrl.Result{}, secretErr
 			}
-			log.Info("Ignore if it is not found error.")
+			log.Info("Ingnoring if it is Secret not found error.")
 		}
 		if secret.Name == maprTicket.Name {
 			log.Error(apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name), " Secret with the mentioned is already exist. Throwing already exist error. Updating status to Faied and writing to events ...")
@@ -111,13 +110,13 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		// Validation success. No secret available with same name.
 		log.Info("Secret name validation done. No secret available with same name.")
 		// Connect to MapR
-		// TODO: Update events 
+		// TODO: Update events
 		log.Info("Connecting to MapR to generate ticket.")
 		if createErr := r.createMapRTicket(req, maprTicket); createErr != nil {
-			log.Error(createErr, "Error while creating MapRticket for user "+ maprTicket.Spec.UserName)
+			log.Error(createErr, "Error while creating MapRticket for user "+maprTicket.Spec.UserName)
 			maprTicket.Status.Phase = nscv1alpha1.Failed
 			r.updateMapRTicketStatus(req, maprTicket)
-			// TODO: Update the events here 
+			// TODO: Update the events here
 			return ctrl.Result{}, apierrors.NewInternalError(createErr)
 		}
 		log.Info("MapRTicket is generated succesfully. Updating the status of the resource to completed.")

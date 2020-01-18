@@ -100,7 +100,7 @@ type MapRTicketStatus struct {
 	// +optional
 	TicketInfo string `json:"ticketInfo,omitempty"`
 
-	// The MapR Ticket of the User 
+	// The MapR Ticket of the User
 	// +optional
 	MaprTicket string `json:"maprTicket,omitempty"`
 
