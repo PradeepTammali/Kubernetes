@@ -124,9 +124,6 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		r.updateMapRTicketStatus(req, maprTicket)
 		// TODO: Update the events here.
 	}
-	// Update the status of Resource MapRTicket here.
-
-	log.Info(maprTicket.Name + " " + maprTicket.Namespace + " " + maprTicket.Spec.UserName + " " + maprTicket.Spec.GroupName + " " + maprTicket.Status.TicketInfo + " " + maprTicket.Status.MaprTicket + " " + string(maprTicket.Status.Phase))
 	return ctrl.Result{}, nil
 }
 

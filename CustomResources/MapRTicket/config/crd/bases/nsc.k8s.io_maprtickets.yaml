@@ -73,8 +73,6 @@ spec:
               description: The state of the ticket generated. Can be Available, Unavailable
               enum:
               - Creating
-              - Available
-              - Unavailable
               - Completed
               - Failed
               type: string

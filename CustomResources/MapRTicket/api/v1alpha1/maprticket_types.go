@@ -71,7 +71,7 @@ making the validation more easily reusable.
 // Only one of the following TicketPhase may be specified.
 // If none of the following TicketPhase is specified, the default one
 // is Creating.
-// +kubebuilder:validation:Enum=Creating;Available;Unavailable;Completed;Failed
+// +kubebuilder:validation:Enum=Creating;Completed;Failed
 type TicketPhase string
 
 const (
