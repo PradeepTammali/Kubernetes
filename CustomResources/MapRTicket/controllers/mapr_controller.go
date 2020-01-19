@@ -17,13 +17,13 @@ package controllers
 
 import (
 	"bytes"
+	apiv1 "k8s.io/api/core/v1"
 	nscv1alpha1 "nsc/k8s/io/api/v1alpha1"
 	"os"
 	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"strconv"
 	"strings"
-	apiv1 "k8s.io/api/core/v1"
 )
 
 func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *nscv1alpha1.MapRTicket) error {
@@ -43,7 +43,6 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	// Decrypt the password and setting as env var
 	log.Info("Decrypting the password.")
 	// TODO: Decrypt the password here
-
 
 	password := maprticket.Spec.Password
 	r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Creating", "Creating MapR Ticket.")

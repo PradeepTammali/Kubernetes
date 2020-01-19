@@ -104,7 +104,7 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		r.updateMapRTicketStatus(req, maprTicket)
 
 		if maprTicket.Spec.CreateSecret {
-			r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Creating", "Creating Secret \""+ maprTicket.Name +"\"")
+			r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Creating", "Creating Secret \""+maprTicket.Name+"\"")
 			log.Info("CreateSecret is true, so creating MapR Ticket in the current namespace with same name as MapRTicket Resource.")
 			// Secret Name validation.
 			secret := &apiv1.Secret{}
