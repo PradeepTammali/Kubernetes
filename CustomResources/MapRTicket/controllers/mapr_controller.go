@@ -23,6 +23,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"strconv"
 	"strings"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *nscv1alpha1.MapRTicket) error {
@@ -43,7 +44,9 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	log.Info("Decrypting the password.")
 	// TODO: Decrypt the password here
 
+
 	password := maprticket.Spec.Password
+	r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Creating", "Creating MapR Ticket.")
 	log.Info("Executing maprlogin command to create mapr ticket.")
 	cmd := exec.Command("maprlogin", "password", "-user", userName)
 	cmd.Stdin = strings.NewReader(password)
@@ -52,6 +55,7 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	err := cmd.Run()
 	if err != nil {
 		log.Error(err, "ERROR - Error executing mapr login password command.")
+		r.Recorder.Eventf(maprticket, apiv1.EventTypeWarning, "FailedCreate", "Error creating: MapRTicket \""+maprticket.Name+"\" can not be generated.")
 		return err
 	}
 	log.Info("MAPR LOGIN OUTPUT: " + out.String())
@@ -63,15 +67,19 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	fileCheck, fileCheckErr := os.Stat(ticketFileLocation)
 	if os.IsNotExist(fileCheckErr) {
 		log.Error(fileCheckErr, "ERROR - /tmp/maprticket_"+userID+" File does not exist. Ticket Might not have been generated properly.")
+		r.Recorder.Eventf(maprticket, apiv1.EventTypeWarning, "Failed", "TicketFetchErr: MapRTicket \""+maprticket.Name+"\" can not be retrieved.")
 		return fileCheckErr
 	}
 	// Check if it a directory
 	if fileCheck.IsDir() {
 		log.Error(fileCheckErr, "ERROR - /tmp/maprticket_"+userID+" is a directory. Not a file. Plese check if mapr login is working properly.")
+		r.Recorder.Eventf(maprticket, apiv1.EventTypeWarning, "Failed", "TicketFetchErr: MapRTicket \""+maprticket.Name+"\" can not be retrieved.")
+		return os.ErrNotExist
 	}
 	log.Info(ticketFileLocation + " File exists.")
 
 	// Fetching the ticket contents of mapr ticket file
+	r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Fetching", "Retrieving the MapR Ticket.")
 	log.Info("Fetching the mapr ticket file contents.")
 	fetchCmd := exec.Command("cat", ticketFileLocation)
 	var fetchOut bytes.Buffer
@@ -79,6 +87,7 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	fetchErr := fetchCmd.Run()
 	if fetchErr != nil {
 		log.Error(fetchErr, "ERROR - Error while fetching MapTicket file contents.")
+		r.Recorder.Eventf(maprticket, apiv1.EventTypeWarning, "Failed", "TicketFetchErr: MapRTicket \""+maprticket.Name+"\" can not be recovered.")
 		return fetchErr
 	}
 	log.Info("CAT " + ticketFileLocation + " is ran successfully.")
@@ -90,13 +99,15 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	r.updateMapRTicketStatus(req, maprticket)
 
 	// Fetching ticket info
-	log.Info("Executing maprlogin print to create mapr ticket.")
+	r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Printing", "Fetching MapR Ticket Info.")
+	log.Info("Executing maprlogin print to fetch ticket information.")
 	printCmd := exec.Command("maprlogin", "print", "-ticketfile", ticketFileLocation)
 	var printOut bytes.Buffer
 	printCmd.Stdout = &printOut
 	printErr := printCmd.Run()
 	if printErr != nil {
 		log.Error(printErr, "ERROR - Error executing mapr login print command.")
+		r.Recorder.Eventf(maprticket, apiv1.EventTypeWarning, "Failed", "TicketPrintErr: MapRTicket \""+maprticket.Name+"\" info can not be retrieved.")
 		return printErr
 	}
 	log.Info("MAPRLOGIN PRINT OUTPUT: " + printOut.String())

@@ -30,6 +30,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 )
 
 // MapRTicketReconciler reconciles a MapRTicket object
@@ -37,6 +38,8 @@ type MapRTicketReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+
+	Recorder record.EventRecorder
 }
 
 func (r *MapRTicketReconciler) requestLogger(req ctrl.Request) logr.Logger {
@@ -45,9 +48,9 @@ func (r *MapRTicketReconciler) requestLogger(req ctrl.Request) logr.Logger {
 
 func (r *MapRTicketReconciler) updateMapRTicketStatus(req ctrl.Request, maprticket *nscv1alpha1.MapRTicket) error {
 	log := r.requestLogger(req)
-	if status_error := r.Status().Update(context.Background(), maprticket); status_error != nil {
-		log.Error(status_error, "Error while updating the status of the maprticket.")
-		return status_error
+	if statusError := r.Status().Update(context.Background(), maprticket); statusError != nil {
+		log.Error(statusError, "Error while updating the status of the maprticket.")
+		return statusError
 	}
 	return nil
 }
@@ -81,27 +84,27 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		log.Info("Updating the status to creating.")
 		if status_err := r.updateMapRTicketStatus(req, maprTicket); status_err != nil {
 			log.Error(status_err, "ERROR - Error while updating the status of the Resource of type MapRTicket.")
-			// TODO: Update the Resource events here
+			r.Recorder.Eventf(maprTicket, apiv1.EventTypeWarning, "FailedUpdate", "Error updating: MapRTicket \""+maprTicket.Name+"\" status update failed.")
 			return ctrl.Result{}, status_err
 		}
 		log.Info("Status updated.")
 
-		// Connecting to MapR to create MapR Ticket 
-		// TODO: Update events
+		// Connecting to MapR to create MapR Ticket
+		r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Connecting", "Establishing connecting to MapR Storage Cluster.")
 		log.Info("Connecting to MapR to generate ticket.")
 		if createErr := r.createMapRTicket(req, maprTicket); createErr != nil {
 			log.Error(createErr, "Error while creating MapRticket for user "+maprTicket.Spec.UserName)
 			maprTicket.Status.Phase = nscv1alpha1.Failed
 			r.updateMapRTicketStatus(req, maprTicket)
-			// TODO: Update the events here
+			r.Recorder.Eventf(maprTicket, apiv1.EventTypeWarning, "FailedCreate", "Error creating: MapRTicket \""+maprTicket.Name+"\" create failed.")
 			return ctrl.Result{}, apierrors.NewInternalError(createErr)
 		}
 		log.Info("MapRTicket is generated succesfully. Updating the status of the resource to completed.")
 		maprTicket.Status.Phase = nscv1alpha1.Completed
 		r.updateMapRTicketStatus(req, maprTicket)
-		// TODO: Update the events here.
 
 		if maprTicket.Spec.CreateSecret {
+			r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Creating", "Creating Secret \""+ maprTicket.Name +"\"")
 			log.Info("CreateSecret is true, so creating MapR Ticket in the current namespace with same name as MapRTicket Resource.")
 			// Secret Name validation.
 			secret := &apiv1.Secret{}
@@ -111,16 +114,16 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 					log.Error(secretErr, "ERROR- Error occured while reading secret.")
 					maprTicket.Status.Phase = nscv1alpha1.Failed
 					r.updateMapRTicketStatus(req, maprTicket)
-					// TODO: Update the Resource events here
+					r.Recorder.Eventf(maprTicket, apiv1.EventTypeWarning, "FailedListing", "Error fetching: Can not list resources Secrets.")
 					return ctrl.Result{}, secretErr
 				}
 				log.Info("Ingnoring if it is Secret not found error.")
 			}
 			if secret.Name == maprTicket.Name {
-				log.Error(apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name), " Secret with the mentioned is already exist. Throwing already exist error. Updating status to Faied and writing to events ...")
+				log.Error(apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name), " Secret with the mentioned is already exist. Throwing already exist error. Updating status to Failed ...")
 				maprTicket.Status.Phase = nscv1alpha1.Failed
 				r.updateMapRTicketStatus(req, maprTicket)
-				// TOD: Update the events
+				r.Recorder.Eventf(maprTicket, apiv1.EventTypeWarning, "FailedCreate", "Error creating: Secret \""+secret.Name+"\" already exist.")
 				return ctrl.Result{}, apierrors.NewAlreadyExists(schema.GroupResource{}, "Secret "+secret.Name)
 			}
 			// Validation success. No secret available with same name.
@@ -130,21 +133,23 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 			secret = &apiv1.Secret{
 				Type: apiv1.SecretTypeOpaque,
 				ObjectMeta: metav1.ObjectMeta{
-						Name:      maprTicket.Name,
-						Namespace: maprTicket.Namespace,
-						Labels:    maprTicket.GetLabels(),
+					Name:      maprTicket.Name,
+					Namespace: maprTicket.Namespace,
+					Labels:    maprTicket.GetLabels(),
 				},
 			}
 			if maprTicket.Status.MaprTicket != "" || len(maprTicket.Status.MaprTicket) != 0 {
 				secret.Data = map[string][]byte{
-						"CONTAINER_TICKET":  []byte(base64.StdEncoding.EncodeToString(([]byte(maprTicket.Status.MaprTicket)))),
+					"CONTAINER_TICKET": []byte(base64.StdEncoding.EncodeToString(([]byte(maprTicket.Status.MaprTicket)))),
 				}
 			}
 			log.Info("Creating resource Secret in current namespace with MapR Ticket.")
 			if secretCreateErr := r.Create(ctx, secret); secretCreateErr != nil {
 				log.Error(secretCreateErr, "ERROR - unable to create MapRTicket Secret")
-				// TODO: update the events here
-                return ctrl.Result{}, secretCreateErr
+				maprTicket.Status.Phase = nscv1alpha1.Failed
+				r.updateMapRTicketStatus(req, maprTicket)
+				r.Recorder.Eventf(maprTicket, apiv1.EventTypeWarning, "FailedCreate", "Error creating: Secret \""+secret.Name+"\" is can not be created.")
+				return ctrl.Result{}, secretCreateErr
 			}
 			log.Info("Created MapR Ticket Secret successfully.")
 
@@ -153,13 +158,37 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 			maprTicket.Status.TicketSecretName = secret.ObjectMeta.Name
 			maprTicket.Status.TicketSecretNamespace = secret.ObjectMeta.Namespace
 			r.updateMapRTicketStatus(req, maprTicket)
-			// TODO: Update the events here 
+			// TODO: Update the events here
+		} else {
+			log.Info("CreateSecret is set to false.")
 		}
 	}
 	return ctrl.Result{}, nil
 }
 
+var (
+	secretOwnerKey = ".metadata.controller"
+)
+
 func (r *MapRTicketReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(&apiv1.Secret{}, secretOwnerKey, func(rawObj runtime.Object) []string {
+		// grab the job object, extract the owner...
+		secret := rawObj.(*apiv1.Secret)
+		owner := metav1.GetControllerOf(secret)
+		if owner == nil {
+			return nil
+		}
+		// ...make sure it's a MapRTicket...
+		if owner.APIVersion != nscv1alpha1.GroupVersion.String() || owner.Kind != "MapRTicket" {
+			return nil
+		}
+
+		// ...and if so, return it
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&nscv1alpha1.MapRTicket{}).
 		Owns(&apiv1.Secret{}).

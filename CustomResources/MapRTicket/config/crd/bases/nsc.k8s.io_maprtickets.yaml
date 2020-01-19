@@ -36,6 +36,12 @@ spec:
         spec:
           description: MapRTicketSpec defines the desired state of MapRTicket
           properties:
+            createSecret:
+              description: This flag tells the controller whether to create secret
+                or not with mapr ticket encoded in base64. MaprTicket Resource does
+                not delete the secret upon deletion of MapRTicket resource. When set
+                to true, creates secret with same name as Resource name.
+              type: boolean
             groupID:
               description: GroupID of the user who is trying to create ticket GroupID
                 will be the IDM group id of the user which he belongs to in NSC.
