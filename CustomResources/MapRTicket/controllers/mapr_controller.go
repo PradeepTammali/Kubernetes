@@ -114,10 +114,9 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 
 	// Updating the status of the Resource.
 	log.Info("Updating the MaprTicketInfo status of the MapRTicket.")
-	if printOut.String()!= "" {
-		maprticket.Status.MaprTicketInfo = strings.Split(printOut.String(), "\n")[1]
-		r.updateMapRTicketStatus(req, maprticket)
-	}
+	maprticket.Status.MaprTicketInfo = printOut.String()
+	r.updateMapRTicketStatus(req, maprticket)
+
 
 	// Unsetting the environment varibales
 	log.Info("Unsetting the env variables.")
