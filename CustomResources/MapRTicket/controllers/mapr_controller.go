@@ -45,7 +45,7 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	// TODO: Decrypt the password here
 
 	password := maprticket.Spec.Password
-	r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Creating", "Creating MapR Ticket.")
+	// r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Creating", "Creating MapR Ticket.")
 	log.Info("Executing maprlogin command to create mapr ticket.")
 	cmd := exec.Command("maprlogin", "password", "-user", userName)
 	cmd.Stdin = strings.NewReader(password)
@@ -78,7 +78,7 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	log.Info(ticketFileLocation + " File exists.")
 
 	// Fetching the ticket contents of mapr ticket file
-	r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Fetching", "Retrieving the MapR Ticket.")
+	// r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Fetching", "Retrieving the MapR Ticket.")
 	log.Info("Fetching the mapr ticket file contents.")
 	fetchCmd := exec.Command("cat", ticketFileLocation)
 	var fetchOut bytes.Buffer
@@ -98,7 +98,7 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 	r.updateMapRTicketStatus(req, maprticket)
 
 	// Fetching ticket info
-	r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Printing", "Fetching MapR Ticket Info.")
+	// r.Recorder.Eventf(maprticket, apiv1.EventTypeNormal, "Printing", "Fetching MapR Ticket Info.")
 	log.Info("Executing maprlogin print to fetch ticket information.")
 	printCmd := exec.Command("maprlogin", "print", "-ticketfile", ticketFileLocation)
 	var printOut bytes.Buffer
@@ -114,8 +114,10 @@ func (r *MapRTicketReconciler) createMapRTicket(req ctrl.Request, maprticket *ns
 
 	// Updating the status of the Resource.
 	log.Info("Updating the MaprTicketInfo status of the MapRTicket.")
-	maprticket.Status.MaprTicketInfo = printOut.String()
-	r.updateMapRTicketStatus(req, maprticket)
+	if printOut.String()!= "" {
+		maprticket.Status.MaprTicketInfo = strings.Split(printOut.String(), "\n")[1]
+		r.updateMapRTicketStatus(req, maprticket)
+	}
 
 	// Unsetting the environment varibales
 	log.Info("Unsetting the env variables.")

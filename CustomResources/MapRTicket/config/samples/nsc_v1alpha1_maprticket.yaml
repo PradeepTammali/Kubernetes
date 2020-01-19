@@ -4,9 +4,9 @@ metadata:
   name: maprticket-sample
 spec:
   # Add fields here
-  groupID: 
-  groupName: 
-  userID: 
-  userName: 
-  password: 
-  createSecret: 
+  groupID: 25427
+  groupName: nscdev
+  userID: 7160629
+  userName: etmmprd
+  password: Changeit$12
+  createSecret: false

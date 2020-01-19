@@ -90,7 +90,7 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		log.Info("Status updated.")
 
 		// Connecting to MapR to create MapR Ticket
-		r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Connecting", "Establishing connecting to MapR Storage Cluster.")
+		// r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Connecting", "Establishing connecting to MapR Storage Cluster.")
 		log.Info("Connecting to MapR to generate ticket.")
 		if createErr := r.createMapRTicket(req, maprTicket); createErr != nil {
 			log.Error(createErr, "Error while creating MapRticket for user "+maprTicket.Spec.UserName)
@@ -104,7 +104,7 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		r.updateMapRTicketStatus(req, maprTicket)
 
 		if maprTicket.Spec.CreateSecret {
-			r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Creating", "Creating Secret \""+maprTicket.Name+"\"")
+			// r.Recorder.Eventf(maprTicket, apiv1.EventTypeNormal, "Creating", "Creating Secret \""+maprTicket.Name+"\"")
 			log.Info("CreateSecret is true, so creating MapR Ticket in the current namespace with same name as MapRTicket Resource.")
 			// Secret Name validation.
 			secret := &apiv1.Secret{}
