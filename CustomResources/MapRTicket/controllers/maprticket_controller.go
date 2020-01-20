@@ -57,7 +57,6 @@ func (r *MapRTicketReconciler) updateMapRTicketStatus(req ctrl.Request, maprtick
 
 // +kubebuilder:rbac:groups=nsc.k8s.io,resources=maprtickets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=nsc.k8s.io,resources=maprtickets/status,verbs=get;update;patch
-// As we create secret for mapr ticket we need RBACs to perform operations on secrets
 // +kubebuilder:rbac:groups=batch,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
