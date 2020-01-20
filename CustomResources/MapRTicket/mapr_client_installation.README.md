@@ -3,9 +3,9 @@
 
 ```
 export DEFAULT_USERID=0
-export DEFAULT_USERNAME=root
+export DEFAULT_USERNAME=""
 export DEFAULT_GROUPID=0
-export DEFAULT_GROUPNAME=root
+export DEFAULT_GROUPNAME=""
 export ENABLE_WEBHOOKS=false
 
 
@@ -22,6 +22,10 @@ export container=docker
 export DEBIAN_FRONTEND=noninteractive
 export MAPR_CLDB_HOSTS=
 export MAPR_CLUSTER=
+export MAPR_CONTAINER_GID=0
+export MAPR_CONTAINER_GROUP=root
+export MAPR_CONTAINER_UID=0
+export MAPR_CONTAINER_USER=root
 export TERM=xterm
 ```
 
