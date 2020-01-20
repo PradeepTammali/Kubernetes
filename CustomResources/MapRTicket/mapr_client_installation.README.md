@@ -55,10 +55,10 @@ https://mapr.com/docs/home/AdvancedInstallation/c_installer_how_it_works.html#co
 ``` 
 docker cp /home/pradeep/ssl_truststore f69551aa4141:/opt/mapr/conf/
 
-export MAPR_CONTAINER_GID=
-export MAPR_CONTAINER_GROUP=
-export MAPR_CONTAINER_UID=
-export MAPR_CONTAINER_USER=
+export MAPR_CONTAINER_GID=0
+export MAPR_CONTAINER_GROUP=root
+export MAPR_CONTAINER_UID=0
+export MAPR_CONTAINER_USER=root
 export MAPR_TICKETFILE_LOCATION=/tmp/maprticket_$MAPR_CONTAINER_UID
 ```
 
