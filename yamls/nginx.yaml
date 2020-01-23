@@ -1,0 +1,41 @@
+---
+kind: Service
+spec:
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    name: nginx
+    targetPort: 80
+    port: 8080
+  selector:
+    app: nginx
+apiVersion: v1
+metadata:
+  name: nginx
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image:  nginx
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: '1'
+            memory: 1Gi
+          limits:
+            cpu: '1'
+            memory: 1Gi
