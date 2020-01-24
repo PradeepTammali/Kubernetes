@@ -6,7 +6,7 @@
 
 
 
-# To add admin.conf to existing config
+To add admin.conf to existing config
 kind export kubeconfig
 
 
