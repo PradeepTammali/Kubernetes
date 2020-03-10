@@ -45,12 +45,6 @@ mv /tmp/mapr-setup.sh /opt/mapr/installer/docker/
 /opt/mapr/installer/docker/mapr-setup.sh -r http://package.mapr.com/releases container client 6.1.0 6.0.0 mapr-client mapr-posix-client-container mapr-hbase mapr-asynchbase mapr-hive mapr-pig mapr-spark mapr-kafka mapr-librdkafka
 ```
 
-Reference:
-https://mapr.com/docs/home/MapRInstaller.html
-https://mapr.com/docs/home/AdvancedInstallation/c_installer_how_it_works.html#concept_mt1_xzx_ft
-
-
-
 4. Copy trustore of mapr and set env vars like user, uid, group and gid
 ``` 
 docker cp /home/pradeep/ssl_truststore f69551aa4141:/opt/mapr/conf/
@@ -69,3 +63,7 @@ export MAPR_TICKETFILE_LOCATION=/tmp/maprticket_$MAPR_CONTAINER_UID
 maprlogin password -cluster $MAPR_CLUSTER -user $MAPR_CONTAINER_USER 
 cat $MAPR_TICKETFILE_LOCATION | base64 -w 0
 ```
+
+# Reference:
+https://mapr.com/docs/home/MapRInstaller.html
+https://mapr.com/docs/home/AdvancedInstallation/c_installer_how_it_works.html#concept_mt1_xzx_ft
