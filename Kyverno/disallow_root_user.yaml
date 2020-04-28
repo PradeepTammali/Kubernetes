@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-root-user
+#  annotations:
+#    policies.kyverno.io/category: Security
+#    policies.kyverno.io/description: By default, processes in a container run as a 
+#      root user (uid 0). To prevent potential compromise of container hosts, specify a 
+#      least privileged user ID when building the container image and require that 
+#      application containers run as non root users.
+spec:
+  validationFailureAction: enforce
+  rules:
+  - name: validate-runAsNonRoot
+    match:
+      resources:
+        kinds:
+        - Pod
+    validate:
+      message: "Running as root user is not allowed. Set runAsNonRoot to true"
+      anyPattern:
+      - spec:
+          securityContext:
+            # https://github.com/kubernetes/api/blob/7dc09db16fb8ff2eee16c65dc066c85ab3abb7ce/core/v1/types.go#L3165
+            runAsNonRoot: true
+      - spec:
+          containers:
+          - securityContext:
+              # https://github.com/kubernetes/api/blob/7dc09db16fb8ff2eee16c65dc066c85ab3abb7ce/core/v1/types.go#L5742
+              runAsNonRoot: true
