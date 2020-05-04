@@ -1,0 +1,46 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: worker
+  extraPortMappings:
+  - containerPort: 6443
+    hostPort: 6443
+    listenAddress: "0.0.0.0"
+  - containerPort: 6444
+    hostPort: 6444
+    listenAddress: "0.0.0.0"
+# patch the generated kubeadm config with a featuregate
+kubeadmConfigPatches:
+- |
+  kind: ClusterConfiguration
+  metadata:
+    name: config
+  apiServer:
+    extraArgs:
+      "feature-gates": "SCTPSupport=true"
+    certSANs:
+      - localhost
+      - 127.0.0.1
+      - 10.0.75.1
+  scheduler:
+    extraArgs:
+      "feature-gates": "SCTPSupport=true"
+  controllerManager:
+    extraArgs:
+      "feature-gates": "SCTPSupport=true"
+- |
+  kind: InitConfiguration
+  metadata:
+    name: config
+  nodeRegistration:
+    kubeletExtraArgs:
+      "feature-gates": "SCTPSupport=true"
+- |
+  kind: KubeletConfiguration
+  featureGates:
+    SCTPSupport: true
+- |
+  kind: KubeProxyConfiguration
+  featureGates:
+    SCTPSupport: true
