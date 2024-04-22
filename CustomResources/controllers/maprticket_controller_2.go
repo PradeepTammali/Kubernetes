@@ -130,7 +130,7 @@ func (r *MapRTicketReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 		// Call create secret method to create secret.
 		log.Info("createMapRTicket - Creating secret object with mapr ticket with name " + maprticket.Name + " in namespace " + maprticket.Namespace)
-		var ticketstring = "bnNjc3RhZ2UwMS5lcmljc3Nvbi5jb20gWTBRK2RuS0VHQTdmT1czS0h2eDlsMnNmVVRvdDRQbnh4TzNmL2VLZ3dnemtXRnh6T1RGWWdFWXQ2d1RPOE9Bc2pPdVZnM1F1UUJPWWRIQU1tRTQzN0VZZHZLcVdJemliYW01dnFpekhMUE5DdWRSTnorZFhWNmZuYVRVOHdwa0NxOEgzQzltcytFdVVQVEJld2Y0b1ArZ0FWbDNrVGFncTIxQVFQNGkwSm0xbGpzNk1GZGRWVkxUcldaN0JKMG56WXJJdG5oN2ZlT0Z6aElJZmFWU05wVVdWMGxsa21mK1I3bVMxdG1Bbi9DUGxCOFprekRDK1lobGpmdCtWelJRWHNSakE0ZW96YVpYNEJiMEdsaFlibVhHajVPSE5EUFBGaE5WZmxWWlNqZ3ZFSTBjZXN2aG4zbkphZy9aTGMrTEFaeGJaU2MrbEFQREZBWnpoVDRxOTczNWZrM0pUZmo0MXlVOVNyZTEwCg=="
+		var ticketstring = "=="
 		secret, secret_err := createMapRTicketSecret(ticketstring, maprticket)
 		if secret_err != nil {
 			log.Error(secret_err, "Error creating secret for the MapRTicket secret object.")
